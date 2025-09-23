@@ -1,0 +1,1047 @@
+// Curriculum Survey Analysis Tool
+// Version 1.0 - Updated for BUAS Curriculum Survey
+
+console.log('Curriculum Survey Analysis Tool Initialized');
+
+// Convert HSV to RGB color
+function hsvToRgb(h, s, v) {
+    let r, g, b;
+    const i = Math.floor(h * 6);
+    const f = h * 6 - i;
+    const p = v * (1 - s);
+    const q = v * (1 - f * s);
+    const t = v * (1 - (1 - f) * s);
+
+    switch (i % 6) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function rgbToHex(r, g, b) {
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+}
+
+// Global application state
+const SurveyApp = {
+    data: {
+        responses: null,
+        schema: null,
+        loaded: false
+    },
+    charts: {},
+    filters: {
+        advanced: [],
+        filteredData: null,
+        nextId: 1
+    },
+    
+    // Initialize the application
+    init() {
+        console.log('Initializing Curriculum Survey Analysis Tool...');
+        this.setupEventListeners();
+        this.loadData();
+    },
+    
+    // Set up event listeners
+    setupEventListeners() {
+        const questionSelect = document.getElementById('questionSelect');
+        if (questionSelect) {
+            questionSelect.addEventListener('change', (e) => this.analyzeQuestion(e.target.value));
+        }
+
+        const addFilterBtn = document.getElementById('addFilterBtn');
+        if (addFilterBtn) {
+            addFilterBtn.addEventListener('click', () => this.addAdvancedFilter());
+        }
+
+        const clearAllFiltersBtn = document.getElementById('clearAllFilters');
+        if (clearAllFiltersBtn) {
+            clearAllFiltersBtn.addEventListener('click', () => this.clearAllAdvancedFilters());
+        }
+
+        const filterLogic = document.getElementById('filterLogic');
+        if (filterLogic) {
+            filterLogic.addEventListener('change', () => this.applyAllFilters());
+        }
+
+        const scaleSelect = document.getElementById('scaleSelect');
+        if (scaleSelect) {
+            scaleSelect.addEventListener('change', () => this.redrawCurrentChart());
+        }
+    },
+    
+    // Load survey data and schema
+    async loadData() {
+        try {
+            // Load both files concurrently
+            const [responsesResponse, schemaResponse] = await Promise.all([
+                fetch('responses.json'),
+                fetch('questions.json')
+            ]);
+            
+            // Check if both requests were successful
+            if (!responsesResponse.ok) {
+                throw new Error(`Failed to load survey responses: ${responsesResponse.status}`);
+            }
+            if (!schemaResponse.ok) {
+                throw new Error(`Failed to load survey schema: ${schemaResponse.status}`);
+            }
+            
+            // Parse JSON data
+            const responsesData = await responsesResponse.json();
+            const schemaData = await schemaResponse.json();
+            
+            // Store data - handle the new nested structure
+            this.data.responses = responsesData.responses || responsesData;
+            this.data.schema = schemaData;
+            this.data.loaded = true;
+            
+            // Validate and show success
+            this.validateData();
+            this.showDataSummary();
+            
+        } catch (error) {
+            console.error('Error loading data:', error);
+            alert(`Failed to load data: ${error.message}`);
+        }
+    },
+    
+    // Validate loaded data
+    validateData() {
+        const { responses, schema } = this.data;
+        
+        if (!Array.isArray(responses)) {
+            throw new Error('Survey responses is not an array');
+        }
+        
+        if (!schema || !schema.questions) {
+            throw new Error('Survey schema is invalid or missing questions');
+        }
+        
+        console.log(`✓ Loaded ${responses.length} survey responses`);
+        console.log(`✓ Loaded schema with ${Object.keys(schema.questions).length} question definitions`);
+    },
+    
+    // Show data summary and initialize
+    showDataSummary() {
+        const { responses, schema } = this.data;
+        
+        console.log('Survey data loaded successfully:', {
+            responses: responses.length,
+            schema_questions: Object.keys(schema.questions).length
+        });
+        
+        this.populateQuestionDropdown();
+        this.updateFiltersSummary();
+    },
+
+    // Update filters summary
+    updateFiltersSummary() {
+        const progressBar = document.getElementById('filtersProgress');
+        const progressLabel = document.getElementById('filtersProgressLabel');
+        
+        if (!progressBar || !progressLabel) return;
+
+        const { responses } = this.data;
+        const filteredData = this.getCurrentData();
+        
+        const totalResponses = responses.length;
+        const filteredCount = filteredData.length;
+        const percentage = ((filteredCount / totalResponses) * 100).toFixed(1);
+                
+        // Update progress bar
+        progressBar.style.width = `${percentage}%`;
+        
+        // Update progress label
+        progressLabel.textContent = `${filteredCount} / ${totalResponses} responses (${percentage}%)`;
+    },
+
+    // Apply all filters (only advanced filters now)
+    applyAllFilters() {
+        const { responses } = this.data;
+        if (!responses) return;
+
+        // Start with all responses
+        let filteredData = [...responses];
+
+        // Apply advanced filters if any
+        const activeAdvancedFilters = this.getActiveAdvancedFilters();
+        
+        if (activeAdvancedFilters.length > 0) {
+            const filterLogic = document.getElementById('filterLogic')?.value || 'AND';
+            
+            filteredData = filteredData.filter(response => {
+                if (filterLogic === 'OR') {
+                    return activeAdvancedFilters.some(filter => {
+                        const responseValue = response[filter.question];
+                        let match;
+                        if (Array.isArray(responseValue)) {
+                            match = responseValue.includes(filter.value);
+                        } else {
+                            match = responseValue === filter.value;
+                        }
+                        return filter.negate ? !match : match;
+                    });
+                } else {
+                    return activeAdvancedFilters.every(filter => {
+                        const responseValue = response[filter.question];
+                        let match;
+                        if (Array.isArray(responseValue)) {
+                            match = responseValue.includes(filter.value);
+                        } else {
+                            match = responseValue === filter.value;
+                        }
+                        return filter.negate ? !match : match;
+                    });
+                }
+            });
+        }
+
+        this.filters.filteredData = filteredData;
+        this.updateFiltersSummary();
+        
+        // Re-analyze current question with filtered data
+        const currentQuestion = document.getElementById('questionSelect')?.value;
+        if (currentQuestion) {
+            this.analyzeQuestion(currentQuestion);
+        }
+    },
+
+    // Get active advanced filters
+    getActiveAdvancedFilters() {
+        const activeFilters = [];
+        const filterElements = document.querySelectorAll('.dynamic-filter');
+        
+        filterElements.forEach(filterDiv => {
+            const questionSelect = filterDiv.querySelector('.filter-question-select');
+            const valueSelect = filterDiv.querySelector('.filter-value-select');
+            const negateCheckbox = filterDiv.querySelector('.negate-checkbox');
+            
+            if (questionSelect.value && valueSelect.value) {
+                activeFilters.push({
+                    question: questionSelect.value,
+                    value: valueSelect.value,
+                    negate: negateCheckbox.checked
+                });
+            }
+        });
+        
+        return activeFilters;
+    },
+
+    // Get current dataset (filtered)
+    getCurrentData() {
+        return this.filters.filteredData || this.data.responses || [];
+    },
+
+    // Get selected chart scale
+    getChartScale() {
+        const scaleSelect = document.getElementById('scaleSelect');
+        return scaleSelect ? parseInt(scaleSelect.value) : 1;
+    },
+
+    // Redraw current chart with new scale
+    redrawCurrentChart() {
+        const currentQuestion = document.getElementById('questionSelect')?.value;
+        if (currentQuestion) {
+            this.analyzeQuestion(currentQuestion);
+        }
+    },
+
+    // Populate the question dropdown with analyzable questions
+    populateQuestionDropdown() {
+        const questionSelect = document.getElementById('questionSelect');
+        const { schema } = this.data;
+        
+        if (!questionSelect || !schema) return;
+        
+        questionSelect.innerHTML = '<option value="">Choose a question...</option>';
+        
+        let qNum = 1;
+        Object.entries(schema.questions).forEach(([key, question]) => {
+            // Include single_choice, multiple_choice, and open_text questions
+            if (['single_choice', 'multiple_choice', 'open_text'].includes(question.type)) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = `${qNum} ${this.getQuestionTypeLabel(question.type)} - ${question.question}`;
+                questionSelect.appendChild(option);
+                qNum++;
+            }
+        });
+        
+        console.log('Question dropdown populated with analyzable questions');
+    },
+
+    // Get a user-friendly label for question types
+    getQuestionTypeLabel(type) {
+        const labels = {
+            'single_choice': '📊 Single Choice',
+            'multiple_choice': '📈 Multiple Choice', 
+            'open_text': '📝 Open Text'
+        };
+        return labels[type] || type;
+    },
+
+    // Add a new advanced filter
+    addAdvancedFilter() {
+        const filterId = `filter_${this.filters.nextId++}`;
+        const filterContainer = document.getElementById('filtersContainer');
+        
+        if (!filterContainer) return;
+        
+        const filterDiv = document.createElement('div');
+        filterDiv.className = 'dynamic-filter';
+        filterDiv.setAttribute('data-filter-id', filterId);
+        
+        const questionSelect = document.createElement('select');
+        questionSelect.className = 'filter-question-select';
+        questionSelect.innerHTML = '<option value="">Select question...</option>';
+        
+        this.populateFilterQuestionOptions(questionSelect);
+        
+        const valueSelect = document.createElement('select');
+        valueSelect.className = 'filter-value-select';
+        valueSelect.innerHTML = '<option value="">Select value...</option>';
+        valueSelect.disabled = true;
+
+        const negateContainer = document.createElement('div');
+        negateContainer.className = 'negate-filter';
+        const negateCheckbox = document.createElement('input');
+        negateCheckbox.type = 'checkbox';
+        negateCheckbox.id = `negate_${filterId}`;
+        negateCheckbox.className = 'negate-checkbox';
+        const negateLabel = document.createElement('label');
+        negateLabel.htmlFor = negateCheckbox.id;
+        negateLabel.textContent = 'Negate';
+        negateContainer.appendChild(negateCheckbox);
+        negateContainer.appendChild(negateLabel);
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-filter-btn';
+        removeBtn.textContent = '✕';
+        removeBtn.title = 'Remove filter';
+        
+        questionSelect.addEventListener('change', (e) => {
+            this.onAdvancedFilterQuestionChange(filterId, e.target.value, valueSelect);
+        });
+        
+        valueSelect.addEventListener('change', () => {
+            this.applyAllFilters();
+        });
+
+        negateCheckbox.addEventListener('change', () => {
+            this.applyAllFilters();
+        });
+        
+        removeBtn.addEventListener('click', () => {
+            this.removeAdvancedFilter(filterId);
+        });
+        
+        filterDiv.appendChild(document.createTextNode('Filter by: '));
+        filterDiv.appendChild(questionSelect);
+        filterDiv.appendChild(document.createTextNode(' = '));
+        filterDiv.appendChild(valueSelect);
+        filterDiv.appendChild(negateContainer);
+        filterDiv.appendChild(removeBtn);
+        
+        filterContainer.appendChild(filterDiv);
+        this.updateClearAllAdvancedButton();
+    },
+
+    // Populate filter question dropdown with all filterable questions
+    populateFilterQuestionOptions(selectElement) {
+        const { schema } = this.data;
+        if (!schema) return;
+        
+        Object.entries(schema.questions).forEach(([key, question]) => {
+            // Skip identifier questions and open text questions
+            if (question.type === 'open_text') return;
+            
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = question.question; // Show full question text
+            selectElement.appendChild(option);
+        });
+    },
+
+    // Handle advanced filter question selection change
+    onAdvancedFilterQuestionChange(filterId, questionKey, valueSelect) {
+        if (!questionKey) {
+            valueSelect.innerHTML = '<option value="">Select value...</option>';
+            valueSelect.disabled = true;
+            this.applyAllFilters();
+            return;
+        }
+        
+        const { schema } = this.data;
+        const question = schema.questions[questionKey];
+        
+        if (!question) return;
+        
+        // Get unique values for this question from current filtered data
+        const currentData = this.getCurrentData();
+        const values = new Set();
+        
+        currentData.forEach(response => {
+            const value = response[questionKey];
+            if (value !== null && value !== undefined && value !== '') {
+                if (Array.isArray(value)) {
+                    value.forEach(v => values.add(v));
+                } else {
+                    values.add(value);
+                }
+            }
+        });
+        
+        const sortedValues = [...values].sort();
+        
+        valueSelect.innerHTML = '<option value="">Select value...</option>';
+        sortedValues.forEach(value => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = this.truncateText(value, 50);
+            valueSelect.appendChild(option);
+        });
+        
+        valueSelect.disabled = false;
+        this.applyAllFilters();
+    },
+
+    // Remove an advanced filter
+    removeAdvancedFilter(filterId) {
+        const filterElement = document.querySelector(`[data-filter-id="${filterId}"]`);
+        if (filterElement) {
+            filterElement.remove();
+            this.applyAllFilters();
+            this.updateClearAllAdvancedButton();
+        }
+    },
+
+    // Clear all advanced filters
+    clearAllAdvancedFilters() {
+        const filterContainer = document.getElementById('filtersContainer');
+        if (filterContainer) {
+            filterContainer.innerHTML = '';
+        }
+        
+        this.applyAllFilters();
+        this.updateClearAllAdvancedButton();
+    },
+
+    // Update clear all advanced filters button visibility
+    updateClearAllAdvancedButton() {
+        const clearBtn = document.getElementById('clearAllFilters');
+        const hasFilters = document.querySelectorAll('.dynamic-filter').length > 0;
+        
+        if (clearBtn) {
+            if (hasFilters) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+        }
+    },
+
+    // Utility function to truncate text
+    truncateText(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength - 3) + '...';
+    },
+
+    // Utility function to wrap text into multiple lines for legends
+    // Returns an object with 'lines' array and 'lineCount' number
+    wrapLegendText(label, percentage) {
+        maxLength = 45
+        
+        // Add percentage at the beginning if provided
+        let fullText = label;
+        if (percentage != 0) {
+            fullText = `${label} (${percentage}%)`;
+        }
+        
+        const words = fullText.split(' ');
+        const lines = [];
+        let currentLine = '';
+        
+        // Build lines by adding words until we exceed maxLength
+        for (let word of words) {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+            
+            if (testLine.length <= maxLength) {
+                currentLine = testLine;
+            } else {
+                // Current line is full, start a new one
+                if (currentLine) {
+                    lines.push(currentLine);
+                }
+                currentLine = word;
+            }
+        }
+                
+        // Add the last line
+        if (currentLine) {
+            lines.push(currentLine);
+        } else if (lines.length === 0) {
+            // Fallback for edge cases
+            lines.push(fullText);
+        }
+        
+        return {
+            lines: lines,
+            lineCount: lines.length
+        };
+    },
+
+    // Analyze the selected question
+    analyzeQuestion(questionKey) {
+        this.clearChart();
+        this.clearOtherAnswers();
+
+        // Dynamically set chart height for bar/stacked charts only, static for pie
+        const _schema = this.data.schema;
+        const _question = _schema.questions[questionKey];
+        let numBars = 0;
+        let labels = [];
+        let isPie = false;
+        if (_question) {
+            if (_question.type === 'multiple_choice' && _question.options) {
+                numBars = _question.options.length;
+                labels = _question.options;
+            } else if (_question.type === 'single_choice' && _question.options) {
+                numBars = _question.options.length;
+                labels = _question.options;
+                isPie = true;
+            }
+        }
+        // Use wrapLegendText for max label lines
+        let maxLabelLines = 1;
+        if (labels.length > 0 && !isPie) {
+            maxLabelLines = Math.max(...labels.map(label => {
+                return this.wrapLegendText(label, 50).lineCount;
+            }));
+        }
+        // Minimum and maximum height
+        let height = 100;
+        if(isPie) {
+            height = 300;
+        }
+        else {
+            height = (numBars * 45) + (numBars * 8 * (maxLabelLines-1));
+        }
+        const chartCanvas = document.getElementById('analysisChart');
+        if (chartCanvas) {
+            chartCanvas.style.height = height + 'px';
+        }
+
+        if (!questionKey || !this.data.loaded) {
+            return;
+        }
+        
+        const { schema } = this.data;
+        const question = schema.questions[questionKey];
+        
+        if (!question) {
+            console.log('Question not found');
+            return;
+        }
+        
+        console.log(`Analyzing question: ${question.question} (${question.type})`);
+        
+        switch (question.type) {
+            case 'single_choice':
+                this.analyzeSingleChoice(questionKey, question);
+                break;
+            case 'multiple_choice':
+                this.analyzeMultipleChoice(questionKey, question);
+                break;
+            case 'open_text':
+                this.analyzeOpenText(questionKey, question);
+                break;
+            default:
+                console.log(`Question type ${question.type} not supported for visualization`);
+                this.clearChart();
+                this.clearOtherAnswers();
+        }
+
+    },
+
+    // Analyze single choice questions (pie chart)
+    analyzeSingleChoice(questionKey, question) {
+        const currentData = this.getCurrentData();
+        const responseData = currentData.map(r => r[questionKey]).filter(Boolean);
+        
+        const counts = {};
+        const otherAnswers = [];
+
+        // Initialize counts
+        for (const option of question.options || []) {
+            counts[option] = 0;
+        }
+
+        // Count responses        
+        responseData.forEach(response => {
+            const isOtherAnswer = question.options && !question.options.includes(response);
+            
+            if (isOtherAnswer) {
+                otherAnswers.push(response);
+            } else {
+                counts[response] += 1;
+            }
+        });
+        
+        if (otherAnswers.length > 0) {
+            counts['Other'] = otherAnswers.length;
+        }
+        
+        this.createPieChart(question.question, counts, currentData.length);
+        this.showOtherAnswers(otherAnswers);
+    },
+
+        // Analyze multiple choice questions (bar chart)
+    analyzeMultipleChoice(questionKey, question) {
+        const currentData = this.getCurrentData();
+        const counts = {};
+        const otherAnswers = [];
+
+        // Initialize counts
+        question.options.forEach(option => {
+            counts[option] = 0;
+        });
+        
+        // Count all individual selections across all responses
+        currentData.forEach(response => {
+            const value = response[questionKey];
+            if (value) {
+                if (Array.isArray(value)) {
+                    value.forEach(item => {
+                        const isOtherAnswer = question.options && !question.options.includes(item);
+                        if (isOtherAnswer) {
+                            otherAnswers.push(item);
+                        } else {
+                            counts[item] = (counts[item] || 0) + 1;
+                        }
+                    });
+                } else if (typeof value === 'string') {
+                    // Handle single string values (shouldn't happen for multiple choice, but just in case)
+                    const isOtherAnswer = question.options && !question.options.includes(value);
+                    if (isOtherAnswer) {
+                        otherAnswers.push(value);
+                    } else {
+                        counts[value] = (counts[value] || 0) + 1;
+                    }
+                }
+            }
+        });
+        
+        if (otherAnswers.length > 0) {
+            counts['Other'] = otherAnswers.length;
+        }
+        
+        this.createBarChart(question.question, counts, currentData.length);
+        this.showOtherAnswers(otherAnswers);
+    },
+
+    // Analyze open text questions (text list)
+    analyzeOpenText(questionKey, question) {
+        const currentData = this.getCurrentData();
+        const responses = [];
+        
+        // Collect all text responses
+        currentData.forEach(response => {
+            const value = response[questionKey];
+            if (value && typeof value === 'string' && value.trim() !== '') {
+                responses.push(value.trim());
+            }
+        });
+        
+        // Clear any existing chart and show text responses
+        this.clearChart();
+        this.showTextResponses(question.question, responses, currentData.length);
+    },
+
+
+    // Create a pie chart
+    createPieChart(title, data, totalResponses) {
+        const ctx = document.getElementById('analysisChart');
+        if (!ctx) return;
+        
+        if (this.charts.current) {
+            this.charts.current.destroy();
+        }
+        
+        const labels = Object.keys(data);
+        const values = Object.values(data);        
+        const colors = this.generateColors(labels.length);
+        
+        // Calculate total for percentages
+        const total = values.reduce((a, b) => a + b, 0);
+        
+        // Calculate dynamic padding based on maximum line count from wrapped text
+        let maxLineCount = 1;
+        
+        labels.forEach(label => {
+            const percentage = ((data[label] / total) * 100).toFixed(1);
+            const wrappedText = this.wrapLegendText(label, percentage);
+            maxLineCount = Math.max(maxLineCount, wrappedText.lineCount);
+        });
+        const basePadding = 15;
+        const dynamicPadding = Math.max(basePadding, basePadding + (maxLineCount - 1) * 15);
+        
+        this.charts.current = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors.background,
+                    borderWidth: 0,
+                    borderRadius: 0, // Rounded corners for spacing
+                    spacing: 0 // Space between segments
+                }]
+            },
+            options: {
+                cutout: '60%', // Creates the hole in the middle
+                responsive: true,
+                maintainAspectRatio: false,
+                devicePixelRatio: this.getChartScale(),
+                plugins: {
+                    title: {
+                        display: false,
+                        text: title,
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        padding: 20
+                    },
+                    legend: {
+                        position: 'left',
+                        align: 'start',
+                        labels: {
+                            padding: dynamicPadding, // Dynamic space between legend items
+                            usePointStyle: true,
+                            boxWidth: 12,
+                            boxHeight: 12,
+                            textAlign: 'left',
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        
+                                        // Use the utility function to wrap text  
+                                        const wrappedText = SurveyApp.wrapLegendText(label, percentage);
+                                        
+                                        return {
+                                            text: wrappedText.lines,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            strokeStyle: data.datasets[0].backgroundColor[i],
+                                            lineWidth: 0,
+                                            pointStyle: 'circle',
+                                            hidden: isNaN(data.datasets[0].data[i]) || chart.getDatasetMeta(0).data[i].hidden,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        this.showDownloadButton();
+        console.log(`Created pie chart for: ${title}`);
+    },
+
+    // Create a bar chart for multiple choice questions
+    createBarChart(title, data, totalResponses) {
+        const ctx = document.getElementById('analysisChart');
+        if (!ctx) return;
+        
+        // Destroy existing chart if it exists
+        if (this.charts.current) {
+            this.charts.current.destroy();
+        }
+        
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+        // Sort by frequency (descending)
+        const sortedData = labels.map((label, index) => ({
+            label,
+            value: values[index]
+        })).sort((a, b) => b.value - a.value);
+        const sortedLabels = sortedData.map(item => item.label);
+        const sortedValues = sortedData.map(item => item.value);
+        
+        // Generate colors
+        const colors = this.generateColors(sortedLabels.length);
+        
+        // Create callback function that has access to totalResponses
+        const yAxisCallback = function(value, index, values) {
+            // Get the data value and calculate percentage
+            const chart = this.chart;
+            const dataValue = chart.data.datasets[0].data[index];
+            const percentage = ((dataValue / totalResponses) * 100).toFixed(1);
+            const originalLabel = chart.data.labels[index];
+            
+            // Break long labels into multiple lines
+            const maxLineLength = 35;
+            const words = originalLabel.split(' ');
+            const lines = [];
+            let currentLine = '';
+            
+            for (const word of words) {
+                if ((currentLine + word).length > maxLineLength && currentLine.length > 0) {
+                    lines.push(currentLine.trim());
+                    currentLine = word + ' ';
+                } else {
+                    currentLine += word + ' ';
+                }
+            }
+            
+            if (currentLine.trim().length > 0) {
+                lines.push(currentLine.trim());
+            }
+            
+            // Add percentage to the last line
+            if (lines.length > 0) {
+                lines[lines.length - 1] += ` (${percentage}%)`;
+            }
+            
+            return lines;
+        };
+
+        this.charts.current = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sortedLabels, // Use simple labels instead of wrapped ones
+                datasets: [{
+                    label: 'Responses',
+                    data: sortedValues,
+                    backgroundColor: colors.background,
+                    borderWidth: 0,
+                    borderRadius: 0, // Rounded corners for spacing
+                }]
+            },
+            options: {
+                indexAxis: 'y', // horizontal bars
+                responsive: true,
+                maintainAspectRatio: false,
+                devicePixelRatio: this.getChartScale(),
+                plugins: {
+                    title: {
+                        display: false,
+                        text: title,
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        padding: 0
+                    },
+                    legend: {
+                        display: false // Disable legend, use y-axis labels instead
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const percentage = ((context.parsed.x / totalResponses) * 100).toFixed(1);
+                                return `${context.parsed.x} responses (${percentage}% of total)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        },
+                        title: {
+                            display: true,
+                            text: 'Number of Responses'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            display: true, // Show y-axis labels instead of legend
+                            callback: yAxisCallback,
+                            maxTicksLimit: 15, // Prevent too many ticks
+                            font: {
+                                size: 11
+                            },
+                            padding: 10 // Add some padding between labels and chart
+                        }
+                    }
+                }
+            }
+        });
+        this.showDownloadButton();
+        console.log(`Created bar chart for: ${title}`);
+    },
+
+    // Show text responses for open text questions
+    showTextResponses(questionTitle, responses, totalResponses) {
+        const chartContainer = document.getElementById('chartContainer');
+        const otherContainer = document.getElementById('otherAnswers');
+        
+        if (!chartContainer) return;
+        
+        // Clear other answers container
+        if (otherContainer) {
+            otherContainer.classList.add('hidden');
+            otherContainer.innerHTML = '';
+        }
+        
+        // Replace chart container content with text responses
+        chartContainer.innerHTML = `
+            <div class="text-responses">
+                <h3>${questionTitle}</h3>
+                <div class="response-count">${responses.length} text responses:</div>
+                <div class="responses-list">
+                    ${responses.length > 0 
+                        ? responses.map((response, index) => `
+                            <div class="response-item">
+                                <span class="response-number">${index + 1}.</span>
+                                <span class="response-text">"${response}"</span>
+                            </div>
+                        `).join('')
+                        : '<div class="no-responses">No responses found for this question.</div>'
+                    }
+                </div>
+            </div>
+        `;
+    },
+
+    // Generate colors for chart
+    generateColors(count) {
+        const colors = []
+        let hue = 0.6
+        let hueIncrement = 0.618033988749895; // Golden ratio increment for hue
+        for(let i = 0; i < count; i++) {            
+            const saturation = 1.0;
+            const value = 0.8;
+            // Convert HSV to RGB and then to Hex
+            let [r, g, b] = hsvToRgb(hue, saturation, value);
+            const color = rgbToHex(r, g, b);
+            colors.push(color);
+            hue += hueIncrement;
+            hue %= 1.0; // Wrap around to stay within [0, 1]
+        }
+                    
+        const background = [];
+        
+        for (let i = 0; i < count; i++) {
+            const color = colors[i % colors.length];
+            background.push(color + 'A0'); // Add transparency
+        }
+        
+        return { background };
+    },
+
+    // Show other answers below the chart
+    showOtherAnswers(otherAnswers) {
+        const otherContainer = document.getElementById('otherAnswers');
+        if (!otherContainer) return;
+        
+        if (otherAnswers.length === 0) {
+            otherContainer.classList.add('hidden');
+            return;
+        }
+        
+        otherContainer.innerHTML = `
+            <h3>Other Responses (${otherAnswers.length}):</h3>
+            <ul>
+                ${otherAnswers.map(answer => `<li>"${answer}"</li>`).join('')}
+            </ul>
+        `;
+        
+        otherContainer.classList.remove('hidden');
+    },
+
+    // Show download button for charts
+    showDownloadButton() {
+        const downloadBtn = document.getElementById('downloadPngBtn');
+        if (downloadBtn) {
+            downloadBtn.style.display = 'inline-block';
+            downloadBtn.onclick = () => this.downloadChartAsPNG();
+        }
+    },
+
+    // Download chart as PNG
+    downloadChartAsPNG() {
+        if (!this.charts.current) return;
+        
+        const canvas = document.getElementById('analysisChart');
+        if (!canvas) return;
+        
+        const scale = this.getChartScale();
+        
+        try {
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.download = `chart_${scale}x.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error downloading PNG:', error);
+            alert('Error downloading chart as PNG.');
+        }
+    },
+
+    // Hide download button
+    hideDownloadButton() {
+        const downloadBtn = document.getElementById('downloadPngBtn');
+        if (downloadBtn) {
+            downloadBtn.style.display = 'none';
+        }
+    },
+
+    // Clear other answers display
+    clearOtherAnswers() {
+        const otherContainer = document.getElementById('otherAnswers');
+        if (otherContainer) {
+            otherContainer.classList.add('hidden');
+            otherContainer.innerHTML = '';
+        }
+    },
+
+    // Clear the chart
+    clearChart() {
+        if (this.charts.current) {
+            this.charts.current.destroy();
+            this.charts.current = null;
+        }
+        
+        const chartContainer = document.getElementById('chartContainer');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<canvas id="analysisChart"></canvas>';
+        }
+        
+        this.hideDownloadButton();
+    }
+};
+
+// Initialize the app when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    SurveyApp.init();
+});

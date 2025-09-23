@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curriculum Prioritization Survey - Games and VFX</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem 1.5rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .emoji {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .header-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 1.5rem;
+        }
+
+        .stat-item {
+            font-size: 1.3rem;
+            color: #667eea;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+        }
+
+        .description {
+            max-width: 1000px;
+            margin: 0 auto;
+            line-height: 1.6;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        .description p {
+            margin-bottom: 1rem;
+        }
+
+        .analyzer-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+        }
+
+        .analyzer-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 2rem;
+        }
+
+        .analyzer-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .analyzer-section h2 {
+            margin: 0 0 2rem 0;
+            color: #333;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        /* Advanced Filters Section */
+        .filters-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .filters-section h3 {
+            margin: 0 0 1rem 0;
+            color: #374151;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .add-filter-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .add-filter-btn:hover {
+            background: #5a67d8;
+        }
+
+        .logic-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logic-label {
+            font-size: 0.9rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .logic-dropdown {
+            padding: 0.4rem 0.6rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .logic-dropdown:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .filters-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .dynamic-filter {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .dynamic-filter select {
+            padding: 0.4rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            background: white;
+            min-width: 250px;
+            max-width: 400px;
+            width: auto;
+        }
+
+        .dynamic-filter select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .remove-filter-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .remove-filter-btn:hover {
+            background: #dc2626;
+        }
+
+        .negate-filter {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #374151;
+        }
+
+        .negate-filter input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .filters-summary {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 8px;
+        }
+
+        .summary-text {
+            font-weight: 500;
+            color: #1e40af;
+            margin-bottom: 0.75rem;
+            text-align: center;
+        }
+
+        .progress-container {
+            position: relative;
+            background: #e5e7eb;
+            border-radius: 12px;
+            height: 24px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 12px;
+            transition: width 0.3s ease;
+            min-width: 0;
+        }
+
+        .progress-label {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 1px 1px 0 #000;
+            z-index: 1;
+        }
+
+        .question-selector {
+            margin-bottom: 2rem;
+        }
+
+        .question-selector label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .question-dropdown {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .question-dropdown:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;            
+            height: auto;
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1rem;
+        }
+
+        #analysisChart {
+            max-width: 100%;
+            height: 350px;
+        }
+
+        .other-answers {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border-left: 4px solid #667eea;
+        }
+
+        .other-answers h3 {
+            margin: 0 0 1rem 0;
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .other-answers ul {
+            margin: 0;
+            padding-left: 1.5rem;
+            color: #555;
+        }
+
+        .other-answers li {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .text-responses {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .text-responses h3 {
+            margin: 0 0 1rem 0;
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .response-count {
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            color: #374151;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .responses-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #f8fafc;
+        }
+
+        .response-item {
+            display: flex;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .response-number {
+            font-weight: 600;
+            color: #667eea;
+            min-width: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .response-text {
+            flex: 1;
+            color: #374151;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .no-responses {
+            text-align: center;
+            color: #6b7280;
+            font-style: italic;
+            padding: 2rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: white;
+            border-bottom-color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                padding: 1.5rem 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .description {
+                font-size: 0.95rem;
+            }
+        }
+
+        /* Animations */
+        .header {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Curriculum Prioritization Survey</h1>
+            <div class="header-stats">
+                <div class="stat-item">📊 Games & VFX</div>
+                <div class="stat-item">❓ 17 Questions</div>
+                <div class="stat-item">👥 119 Participants</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="analyzer-container">
+        <div class="analyzer-section">
+            <h2>🔍 Survey Filtering</h2>
+            
+            <div class="filters-section">
+                <h3>⚙️ Advanced Filters</h3>
+                <div class="filter-controls">
+                    <button id="addFilterBtn" class="add-filter-btn">+ Add Filter</button>
+                    <div class="logic-selector">
+                        <span class="logic-label">Combine filters with:</span>
+                        <select id="filterLogic" class="logic-dropdown">
+                            <option value="AND">AND (all must match)</option>
+                            <option value="OR">OR (any can match)</option>
+                        </select>
+                    </div>
+                    <button id="clearAllFilters" class="add-filter-btn hidden">Clear All Filters</button>
+                </div>
+                <div id="filtersContainer" class="filters-container"></div>
+            </div>
+
+            <div class="filters-summary">                
+                <div class="progress-container">
+                    <div class="progress-bar" id="filtersProgress"></div>
+                    <div class="progress-label" id="filtersProgressLabel">119 / 119 responses</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="analyzer-section">
+            <h2>📊 Question Analysis</h2>
+            
+            <div class="question-selector">
+                <label for="questionSelect">Select a question to analyze:</label>
+                <select id="questionSelect" class="question-dropdown">
+                    <option value="">Choose a question...</option>
+                </select>
+            </div>
+            <div id="chartContainer" class="chart-container">
+                <canvas id="analysisChart"></canvas>
+            </div>
+            
+            <div style="margin-top: 10px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                <div>
+                    <label for="scaleSelect">Chart Resolution:</label>
+                    <select id="scaleSelect" style="padding: 6px; margin-left: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="1">1x</option>
+                        <option value="2">2x</option>
+                        <option value="3">3x</option>
+                        <option value="4">4x</option>
+                    </select>
+                </div>
+                
+                <button id="downloadPngBtn" class="add-filter-btn" style="display: none;">
+                    📥 Download as PNG
+                </button>
+            </div>
+            
+            <div id="otherAnswers" class="other-answers hidden"></div>
+        </div>
+
+        <div class="analyzer-section">
+            <h2>📋 Data Access</h2>
+            <div class="description">
+                <p>
+                    The survey data is available for download in JSON format. You can access the raw data to perform your own analysis or to integrate it into your projects.
+                </p>
+                <p>
+                    <a href="responses.json" download>Download Survey Data (JSON)</a>
+                </p>
+            </div>
+        </div>
+
+        <div class="analyzer-section">
+            <h2>ℹ️ About the Survey</h2>
+            <div class="description">
+                <p>
+                    This survey is part of curriculum research at Breda University of Applied Sciences (BUAS). 
+                    The survey examines industry perspectives on curriculum prioritization for Games and VFX art education,
+                    gathering insights from professionals across film/television/VFX, video games, and related industries.
+                </p>                
+                <p>
+                    The analysis covers multiple dimensions including professional roles, specialization demands, 
+                    technical skills priorities, and the balance between foundational art skills and emerging technologies 
+                    in modern digital art education. You can explore the insights gathered from industry professionals, analyze specific
+                    questions, and visualize the data in various formats.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Breda University of Applied Sciences - Games and VFX Art Education</p>
+        <p>Curriculum Survey Analysis Tool | Data visualization for academic research</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
