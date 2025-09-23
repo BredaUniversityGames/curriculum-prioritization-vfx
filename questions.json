@@ -1,0 +1,224 @@
+{
+  "survey_metadata": {
+    "title": "Curriculum Prioritization Games and VFX art roles",
+    "total_questions": 17,
+    "question_types": {
+      "identifier": 0,
+      "single_choice": 10,
+      "multiple_choice": 3,
+      "open_text": 4
+    }
+  },
+  "questions": {
+    "primary_industry": {
+      "question": "What is your primary industry?",
+      "type": "single_choice",
+      "required": true,
+      "options": [
+        "Film / Television / VFX",
+        "Video Games / Interactive Entertainment",
+        "Both (e.g., Cinematics, VP, XR, Cross-Over Projects)",
+        "Education",
+        "Other"
+      ],
+      "has_other": true
+    },
+    "primary_discipline": {
+      "question": "What is your primary discipline?",
+      "type": "single_choice",
+      "required": true,
+      "options": [
+        "Generalist 3D Artist (Games)",
+        "Generalist Modeler (VFX)",
+        "Texture / Shader Artist (Games)",
+        "Texture / Shader Artist (VFX)",
+        "Character Art (Games)",
+        "Creature Modeler (VFX)",
+        "Environment/Level Art (Games)",
+        "Technical Artist (Games)",
+        "Pipeline TD (VFX)",
+        "Rigging Artist (Games)",
+        "Rigging Artist (VFX)",
+        "Animator (Games)",
+        "Animator (VFX)",
+        "Lighting / Look Dev Artist (Games)",
+        "Lighting / Look Dev Artist (VFX)",
+        "VFX Artist (Real-time for Games)",
+        "FX Artist (Houdini for VFX)",
+        "Compositor (VFX)",
+        "Matte Painter (VFX)",
+        "UI/UX Artist (Games)",
+        "Other"
+      ],
+      "has_other": true
+    },
+    "seniority_level": {
+      "question": "What is your seniority level?",
+      "type": "single_choice",
+      "required": true,
+      "options": [
+        "Junior / Associate",
+        "Mid-level",
+        "Senior / Lead",
+        "Director / Head of Department",
+        "Supervisor"
+      ]
+    },
+    "future_specializations_demand": {
+      "question": "Looking at the next 3-5 years, which specializations will have the strongest demand for well-trained juniors? (Select top 3)",
+      "type": "multiple_choice",
+      "max_selections": 3,
+      "required": true,
+      "options": [
+        "Generalist 3D Artist (Games)",
+        "Generalist Modeler (VFX)",
+        "Texture/Look Dev Artist (Games)",
+        "Texture/Look Dev Artist (VFX)",
+        "Concept Artist",
+        "Character Artist (Games)",
+        "Creature Modeler (VFX)",
+        "Environment/Level Art (Games)",
+        "Technical Artist (Games)",
+        "Pipeline TD (VFX)",
+        "Rigging Artist (Games)",
+        "Rigging Artist (VFX)",
+        "Animator (Games)",
+        "Animator (VFX)",
+        "Lighting Artist (Games)",
+        "Lighting Artist (VFX)",
+        "VFX Artist (Real-time for Games)",
+        "FX Artist (Houdini for VFX)",
+        "Compositor (Nuke for VFX)",
+        "Performance & Optimization (Games)",
+        "Other"
+      ],
+      "has_other": true
+    },
+    "critical_technical_subdisciplines": {
+      "question": "For technical roles, which sub-discipline is most critical for schools to teach? (Select top 2)",
+      "type": "multiple_choice",
+      "max_selections": 2,
+      "required": true,
+      "options": [
+        "Tools & Pipeline Scripting (Python for VFX; Python/C# for Games)",
+        "Shader Authoring (HLSL for Games; OSL/RenderMan, Karma, Arnold for VFX)",
+        "Procedural Content Generation (Houdini)",
+        "Rigging & Animation Tech",
+        "Performance & Optimization (Games)",
+        "Other"
+      ],
+      "has_other": true
+    },
+    "graduate_profile_preference": {
+      "question": "From a hiring perspective, is it more valuable for a graduate to be a Specialist, Generalist, or T-Shaped?",
+      "type": "single_choice",
+      "required": true,
+      "options": [
+        "A Specialist: Highly proficient in one discipline.",
+        "A Generalist: Competent across multiple disciplines.",
+        "T-Shaped: Deeply specialized in one area with broad pipeline understanding."
+      ]
+    },
+    "year_1_focus": {
+      "question": "How should Year 1 be primarily focused?",
+      "type": "single_choice",
+      "required": true,
+      "options": [
+        "Foundational Art Skills (traditional principles)",
+        "Software & Technical Foundations (DCC tools, engines)",
+        "A 50/50 blend of art fundamentals and digital tools.",
+        "Other"
+      ],
+      "has_other": true
+    },
+    "professional_practices_introduction": {
+      "question": "When should students be introduced to core professional practices? (e.g., version control, shot tracking)",
+      "type": "single_choice",
+      "required": true,
+      "options": [
+        "Year 1",
+        "Year2",
+        "Year3",
+        "Year4/ Graduation project"
+      ]
+    },
+    "collaborative_projects_start": {
+      "question": "When should students start collaborative, cross-disciplinary projects?",
+      "type": "single_choice",
+      "required": true,
+      "options": [
+        "Year 1",
+        "Year 2",
+        "Year3",
+        "Year 4",
+        "Multiple years, scaling complexity."
+      ]
+    },
+    "core_concept_non_negotiable": {
+      "question": "What is one non-negotiable core concept every student must understand?",
+      "type": "open_text",
+      "required": true
+    },
+    "core_software_teaching_approach": {
+      "question": "How should our program approach teaching core software?",
+      "type": "single_choice",
+      "required": true,
+      "options": [
+        "Teach specific industry standards in depth (Unreal, Nuke, Houdini).",
+        "Focus on software-agnostic principles.",
+        "A hybrid approach: principles first, then depth in key tools.",
+        "Other"
+      ],
+      "has_other": true
+    },
+    "procedural_principles_importance": {
+      "question": "How essential is it to integrate procedural principles (Houdini) into the curriculum?",
+      "type": "single_choice",
+      "required": true,
+      "options": [
+        "Essential for all",
+        "Important as a Specialization",
+        "A Bonus Skill",
+        "Not a priority"
+      ]
+    },
+    "scripting_teaching_approach": {
+      "question": "How should we approach teaching scripting (VEX, Python) for artists?",
+      "type": "single_choice",
+      "required": true,
+      "options": [
+        "Mandatory dedicated course for all.",
+        "Integrated learning within other courses.",
+        "Optional elective.",
+        "Focus only on Technical Art / TD students."
+      ]
+    },
+    "ai_role": {
+      "question": "The role of AI",
+      "type": "single_choice",
+      "required": true,
+      "options": [
+        "Foundational skills will become more important.",
+        "Foundational skills will be replaced by AI.",
+        "Knowledge of AI will be crucial for any artist.",
+        "Other"
+      ],
+      "has_other": true
+    },
+    "graduate_skills_gap": {
+      "question": "What is the single biggest gap you see in graduates from 4-year programs?",
+      "type": "open_text",
+      "required": true
+    },
+    "emerging_technology_integration": {
+      "question": "What emerging technology should we prepare to integrate into the curriculum?",
+      "type": "open_text",
+      "required": true
+    },
+    "strategic_curriculum_advice": {
+      "question": "Open Feedback: Your one piece of strategic advice for our curriculum.",
+      "type": "open_text",
+      "required": true
+    }
+  }
+}
