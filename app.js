@@ -71,10 +71,7 @@ const SurveyApp = {
             filterLogic.addEventListener('change', () => this.applyAllFilters());
         }
 
-        const scaleSelect = document.getElementById('scaleSelect');
-        if (scaleSelect) {
-            scaleSelect.addEventListener('change', () => this.redrawCurrentChart());
-        }
+
     },
     
     // Load survey data and schema
@@ -239,20 +236,6 @@ const SurveyApp = {
     // Get current dataset (filtered)
     getCurrentData() {
         return this.filters.filteredData || this.data.responses || [];
-    },
-
-    // Get selected chart scale
-    getChartScale() {
-        const scaleSelect = document.getElementById('scaleSelect');
-        return scaleSelect ? parseInt(scaleSelect.value) : 1;
-    },
-
-    // Redraw current chart with new scale
-    redrawCurrentChart() {
-        const currentQuestion = document.getElementById('questionSelect')?.value;
-        if (currentQuestion) {
-            this.analyzeQuestion(currentQuestion);
-        }
     },
 
     // Populate the question dropdown with analyzable questions
@@ -710,7 +693,6 @@ const SurveyApp = {
                 cutout: '60%', // Creates the hole in the middle
                 responsive: true,
                 maintainAspectRatio: false,
-                devicePixelRatio: this.getChartScale(),
                 plugins: {
                     title: {
                         display: false,
@@ -768,7 +750,6 @@ const SurveyApp = {
             }
         });
         
-        this.showDownloadButton();
         console.log(`Created pie chart for: ${title}`);
     },
 
@@ -846,7 +827,6 @@ const SurveyApp = {
                 indexAxis: 'y', // horizontal bars
                 responsive: true,
                 maintainAspectRatio: false,
-                devicePixelRatio: this.getChartScale(),
                 plugins: {
                     title: {
                         display: false,
@@ -894,7 +874,6 @@ const SurveyApp = {
                 }
             }
         });
-        this.showDownloadButton();
         console.log(`Created bar chart for: ${title}`);
     },
 
@@ -1036,8 +1015,6 @@ const SurveyApp = {
         if (chartContainer) {
             chartContainer.innerHTML = '<canvas id="analysisChart"></canvas>';
         }
-        
-        this.hideDownloadButton();
     }
 };
 

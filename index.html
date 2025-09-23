@@ -14,7 +14,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #8b5cf6 0%, #ff6600 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -45,7 +45,7 @@
         .emoji {
             font-size: 1.3rem;
             margin-bottom: 1rem;
-            color: #667eea;
+            color: #8b5cf6;
         }
 
         .header-stats {
@@ -56,13 +56,13 @@
 
         .stat-item {
             font-size: 1.3rem;
-            color: #667eea;
+            color: #8b5cf6;
         }
 
         h1 {
             font-size: 2.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #8b5cf6, #ff6600);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -141,7 +141,7 @@
         }
 
         .add-filter-btn {
-            background: #667eea;
+            background: #8b5cf6;
             color: white;
             border: none;
             padding: 0.5rem 1rem;
@@ -152,7 +152,7 @@
         }
 
         .add-filter-btn:hover {
-            background: #5a67d8;
+            background: #7c3aed;
         }
 
         .logic-selector {
@@ -179,8 +179,8 @@
 
         .logic-dropdown:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
         }
 
         .filters-container {
@@ -214,8 +214,8 @@
 
         .dynamic-filter select:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
         }
 
         .remove-filter-btn {
@@ -270,7 +270,7 @@
 
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: linear-gradient(90deg, #8b5cf6, #ff6600);
             border-radius: 12px;
             transition: width 0.3s ease;
             min-width: 0;
@@ -311,8 +311,8 @@
 
         .question-dropdown:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
         }
 
         .chart-container {
@@ -336,7 +336,7 @@
             background: #f8fafc;
             border-radius: 8px;
             padding: 1.5rem;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #8b5cf6;
         }
 
         .other-answers h3 {
@@ -400,7 +400,7 @@
 
         .response-number {
             font-weight: 600;
-            color: #667eea;
+            color: #8b5cf6;
             min-width: 2rem;
             font-size: 0.9rem;
         }
@@ -528,22 +528,6 @@
             </div>
             <div id="chartContainer" class="chart-container">
                 <canvas id="analysisChart"></canvas>
-            </div>
-            
-            <div style="margin-top: 10px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 15px;">
-                <div>
-                    <label for="scaleSelect">Chart Resolution:</label>
-                    <select id="scaleSelect" style="padding: 6px; margin-left: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        <option value="1">1x</option>
-                        <option value="2">2x</option>
-                        <option value="3">3x</option>
-                        <option value="4">4x</option>
-                    </select>
-                </div>
-                
-                <button id="downloadPngBtn" class="add-filter-btn" style="display: none;">
-                    📥 Download as PNG
-                </button>
             </div>
             
             <div id="otherAnswers" class="other-answers hidden"></div>
