@@ -1,0 +1,16 @@
+# Excel Survey Transformer Requirements
+# Install with: pip install -r requirements.txt
+
+# Core data processing
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# JSON handling (built-in, but explicit for clarity)
+# json - built into Python standard library
+
+# Regular expressions (built-in)
+# re - built into Python standard library
+
+# Optional: For better error handling and logging
+# Uncomment if you want enhanced functionality
+# logging>=0.4.9.6
