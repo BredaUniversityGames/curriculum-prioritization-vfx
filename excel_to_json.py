@@ -93,10 +93,10 @@ class ExcelSurveyTransformer:
             return None
             
         # Split by semicolon and clean each part
-        parts = [self._clean_value(part) for part in str(value).split(';')]
+        parts = [self._clean_value(part) for part in re.split(r';(?=\w)', value)]
         # Remove empty parts
-        clean_parts = [part for part in parts if part]
-        
+        clean_parts = [part.strip(';').strip() for part in parts if part]
+
         return clean_parts if clean_parts else None
     
     def _skip_metadata_columns(self, col_name):
@@ -140,7 +140,10 @@ class ExcelSurveyTransformer:
                     
                 # Get the raw value
                 raw_value = row.get(column_name)
-                
+
+                if isinstance(raw_value, str):
+                    raw_value = ' '.join(raw_value.split())
+
                 # Process based on question type
                 if question_type == 'multiple_choice':
                     transformed_row[question_key] = self._process_multiple_choice(raw_value, question_info)
