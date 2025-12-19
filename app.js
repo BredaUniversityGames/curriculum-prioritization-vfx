@@ -37,6 +37,10 @@ const SurveyApp = {
     },
     charts: {},
     filters: {
+        demographics: {
+            primary_industry: new Set(),
+            primary_discipline: new Set()
+        },
         advanced: [],
         filteredData: null,
         nextId: 1
@@ -136,7 +140,117 @@ const SurveyApp = {
         });
         
         this.populateQuestionDropdown();
+        this.populateDemographicOptions('primary_industry');
+        this.populateDemographicOptions('primary_discipline');
         this.updateFiltersSummary();
+    },
+
+    // Populate demographic options with checkboxes
+    populateDemographicOptions(demographicKey) {
+        const container = document.getElementById(`${demographicKey}_options`);
+        if (!container) return;
+
+        const { responses, schema } = this.data;
+        const question = schema.questions[demographicKey];
+        
+        if (!question || !question.options) return;
+
+        // Count occurrences of each option
+        const counts = {};
+        let otherCount = 0;
+        
+        question.options.forEach(option => {
+            counts[option] = responses.filter(r => r[demographicKey] === option).length;
+        });
+
+        // Count non-schema responses as "Other"
+        responses.forEach(response => {
+            const value = response[demographicKey];
+            if (value && value !== null && value !== undefined && value.trim() !== '' && 
+                !question.options.includes(value)) {
+                otherCount++;
+            }
+        });
+
+        // Add "Other" if there are non-schema responses
+        const allOptions = [...question.options];
+        if (otherCount > 0) {
+            allOptions.push('Other');
+            counts['Other'] = otherCount;
+        }
+
+        // Sort options by count (descending)
+        const sortedOptions = allOptions.sort((a, b) => counts[b] - counts[a]);
+
+        container.innerHTML = '';
+        sortedOptions.forEach(option => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'demographic-option';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `${demographicKey}_${option.replace(/\s+/g, '_').replace(/[^\w]/g, '_')}`;
+            checkbox.checked = true; // Start with all selected
+            checkbox.addEventListener('change', () => this.onDemographicChange(demographicKey, option, checkbox.checked));
+            
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.textContent = option;
+            
+            const count = document.createElement('span');
+            count.className = 'option-count';
+            count.textContent = counts[option];
+            
+            optionDiv.appendChild(checkbox);
+            optionDiv.appendChild(label);
+            optionDiv.appendChild(count);
+            
+            container.appendChild(optionDiv);
+        });
+
+        // Initialize with all options selected
+        this.filters.demographics[demographicKey] = new Set(allOptions);
+    },
+
+    // Handle demographic filter changes
+    onDemographicChange(demographicKey, option, isChecked) {
+        if (isChecked) {
+            this.filters.demographics[demographicKey].add(option);
+        } else {
+            this.filters.demographics[demographicKey].delete(option);
+        }
+        this.applyAllFilters();
+    },
+
+    // Toggle all demographic options
+    toggleAllDemographic(demographicKey) {
+        const { schema } = this.data;
+        const question = schema.questions[demographicKey];
+        if (!question) return;
+
+        const container = document.getElementById(`${demographicKey}_options`);
+        if (!container) return;
+
+        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = !allChecked;
+            const option = checkbox.parentElement.textContent.trim().replace(/^\d+$/, '').trim();
+            
+            // Get the actual option text by finding the label
+            const label = checkbox.parentElement.querySelector('label');
+            if (label) {
+                const optionText = label.textContent;
+                if (!allChecked) {
+                    this.filters.demographics[demographicKey].add(optionText);
+                } else {
+                    this.filters.demographics[demographicKey].delete(optionText);
+                }
+            }
+        });
+        
+        this.applyAllFilters();
     },
 
     // Update filters summary
@@ -160,13 +274,30 @@ const SurveyApp = {
         progressLabel.textContent = `${filteredCount} / ${totalResponses} responses (${percentage}%)`;
     },
 
-    // Apply all filters (only advanced filters now)
+    // Apply all filters (demographic + advanced filters)
     applyAllFilters() {
         const { responses } = this.data;
         if (!responses) return;
 
         // Start with all responses
         let filteredData = [...responses];
+
+        // Apply demographic filters
+        filteredData = filteredData.filter(response => {
+            // Check primary_industry filter
+            const industry = response['primary_industry'];
+            if (industry && !this.filters.demographics.primary_industry.has(industry)) {
+                return false;
+            }
+            
+            // Check primary_discipline filter
+            const discipline = response['primary_discipline'];
+            if (discipline && !this.filters.demographics.primary_discipline.has(discipline)) {
+                return false;
+            }
+            
+            return true;
+        });
 
         // Apply advanced filters if any
         const activeAdvancedFilters = this.getActiveAdvancedFilters();
