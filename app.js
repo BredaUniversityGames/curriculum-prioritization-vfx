@@ -141,8 +141,22 @@ const SurveyApp = {
         
         this.populateQuestionDropdown();
         this.populateDemographicOptions('primary_industry');
-        this.populateDemographicOptions('primary_discipline');
+        // Primary Discipline checkbox UI removed; skip populating.
+        this.updateHeaderStats();
         this.updateFiltersSummary();
+    },
+
+    // Update header stats (participants count)
+    updateHeaderStats() {
+        try {
+            const participantsEl = document.getElementById('participantsCount');
+            if (participantsEl && Array.isArray(this.data.responses)) {
+                const count = this.data.responses.length;
+                participantsEl.textContent = `👥 ${count} Participants`;
+            }
+        } catch (e) {
+            console.warn('Could not update participants count:', e);
+        }
     },
 
     // Populate demographic options with checkboxes
@@ -172,11 +186,15 @@ const SurveyApp = {
             }
         });
 
-        // Add "Other" if there are non-schema responses
+        // Add/merge "Other" bucket for non-schema responses
         const allOptions = [...question.options];
         if (otherCount > 0) {
-            allOptions.push('Other');
-            counts['Other'] = otherCount;
+            if (!allOptions.includes('Other')) {
+                allOptions.push('Other');
+                counts['Other'] = otherCount;
+            } else {
+                counts['Other'] = (counts['Other'] || 0) + otherCount;
+            }
         }
 
         // Sort options by count (descending)
@@ -282,20 +300,24 @@ const SurveyApp = {
         // Start with all responses
         let filteredData = [...responses];
 
-        // Apply demographic filters
+        // Apply demographic filters (skip if set is empty or UI removed)
         filteredData = filteredData.filter(response => {
-            // Check primary_industry filter
-            const industry = response['primary_industry'];
-            if (industry && !this.filters.demographics.primary_industry.has(industry)) {
-                return false;
+            const industrySet = this.filters.demographics.primary_industry;
+            if (industrySet && industrySet.size > 0) {
+                const industry = response['primary_industry'];
+                if (industry && !industrySet.has(industry)) {
+                    return false;
+                }
             }
-            
-            // Check primary_discipline filter
-            const discipline = response['primary_discipline'];
-            if (discipline && !this.filters.demographics.primary_discipline.has(discipline)) {
-                return false;
+
+            const disciplineSet = this.filters.demographics.primary_discipline;
+            if (disciplineSet && disciplineSet.size > 0) {
+                const discipline = response['primary_discipline'];
+                if (discipline && !disciplineSet.has(discipline)) {
+                    return false;
+                }
             }
-            
+
             return true;
         });
 
@@ -994,8 +1016,8 @@ const SurveyApp = {
                     y: {
                         ticks: {
                             display: true, // Show y-axis labels instead of legend
-                            callback: yAxisCallback,
-                            maxTicksLimit: 15, // Prevent too many ticks
+                            callback: yAxisCallback,                                  
+                            autoSkip: false,
                             font: {
                                 size: 11
                             },
